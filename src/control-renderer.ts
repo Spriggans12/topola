@@ -43,6 +43,8 @@ export class ControlRenderer {
     nodes.on('click', (_event, data) => {
       clickCallback?.(data.id!);
     });
+    // Existing buttons are drawn again, e.g. when [-] becomes [+].
+    nodes.selectAll('*').remove();
     nodes.append('rect').attr('width', 12).attr('height', 12);
     nodes
       .append('line')

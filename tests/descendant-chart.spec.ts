@@ -59,4 +59,44 @@ describe('Descendant chart', () => {
     });
     chart.render();
   });
+  it('should draw the expander buttons again when rendering again', () => {
+    // I1+I2
+    //   F1
+    //   |
+    //   I3
+    const json: JsonGedcomData = {
+      fams: [{id: 'F1', husb: 'I1', wife: 'I2', children: ['I3']}],
+      indis: [
+        {id: 'I1', fams: ['F1']},
+        {id: 'I2', fams: ['F1']},
+        {id: 'I3', famc: 'F1'},
+      ],
+    };
+    const collapsedFamily = new Set<string>();
+    const render = () =>
+      new DescendantChart({
+        data: new JsonDataProvider(json),
+        startFam: 'F1',
+        renderer: new FakeRenderer(),
+        svgSelector: 'svg',
+        expanders: true,
+        collapsedFamily,
+      }).render();
+    const button = () => document.querySelector('g.familyExpander')!;
+
+    render();
+    // [-]
+    expect(button().querySelectorAll('rect').length).toEqual(1);
+    expect(button().querySelectorAll('line').length).toEqual(1);
+    collapsedFamily.add('F1');
+    render();
+    // [+]
+    expect(button().querySelectorAll('rect').length).toEqual(1);
+    expect(button().querySelectorAll('line').length).toEqual(2);
+    collapsedFamily.clear();
+    render();
+    // [-] again, without the vertical line of [+].
+    expect(button().querySelectorAll('rect').length).toEqual(1);
+    expect(button().querySelectorAll('line').length).toEqual(1);
+  });
 });
