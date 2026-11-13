@@ -9,6 +9,7 @@ import {
   TreeNodeSelection,
 } from './api';
 import { getVSize } from './composite-renderer';
+import { getChildExpanderId } from './expanders';
 import {
   createTransitionTracker,
   HIDE_TIME_MS,
@@ -37,11 +38,13 @@ export class ControlRenderer {
       node: HierarchyPointNode<TreeNode>,
     ) => ExpanderState | undefined,
     clickCallback?: (id: string) => void,
+    idGetter: (node: HierarchyPointNode<TreeNode>) => string = (node) =>
+      node.id!,
   ) {
     nodes = nodes.filter((node) => stateGetter(node) !== undefined);
 
     nodes.on('click', (_event, data) => {
-      clickCallback?.(data.id!);
+      clickCallback?.(idGetter(data));
     });
     // Existing buttons are drawn again, e.g. when [-] becomes [+].
     nodes.selectAll('*').remove();
@@ -72,6 +75,7 @@ export class ControlRenderer {
     anchorGetter: (node: TreeNode) => [number, number],
     yOffsetGetter: (node: TreeNode) => number,
     direction: ExpanderDirection,
+    idGetter?: (node: HierarchyPointNode<TreeNode>) => string,
   ) {
     const boundNodes = nodes
       .selectAll(`g.${className}`)
@@ -92,8 +96,11 @@ export class ControlRenderer {
       const anchor = anchorGetter(node.data);
       return `translate(${anchor[0] - 6}, ${yOffsetGetter(node.data)})`;
     });
-    this.renderExpander(merged, stateGetter, (id) =>
-      this.options.expanderCallback?.(id, direction),
+    this.renderExpander(
+      merged,
+      stateGetter,
+      (id) => this.options.expanderCallback?.(id, direction),
+      idGetter,
     );
     boundNodes.exit().remove();
   }
@@ -128,6 +135,19 @@ export class ControlRenderer {
       (node) => this.options.renderer.getSpouseAnchor(node),
       (node) => -node.height! / 2 - 12,
       ExpanderDirection.SPOUSE,
+    );
+  }
+
+  /** Renders the [-] buttons that hide a child, above the child. */
+  renderChildControls(nodes: TreeNodeSelection) {
+    this.renderExpanderGroup(
+      nodes,
+      'childExpander',
+      (node) => node.data.childExpander,
+      (node) => this.options.renderer.getIndiAnchor(node),
+      (node) => -node.height! / 2 - 12,
+      ExpanderDirection.CHILD,
+      (node) => getChildExpanderId(node.data.parentId!, node.data.indi!.id),
     );
   }
 
@@ -188,6 +208,7 @@ export class ControlRenderer {
       this.renderFamilyControls(merged);
       this.renderIndiControls(merged);
       this.renderSpouseControls(merged);
+      this.renderChildControls(merged);
 
       if (this.options.animate) {
         boundNodes

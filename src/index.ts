@@ -10,6 +10,7 @@ export * from './date-format';
 export * from './fancy-chart';
 export * from './descendant-chart';
 export * from './detailed-renderer';
+export * from './expanders';
 export * from './gedcom';
 export * from './hourglass-chart';
 export * from './kinship-chart';

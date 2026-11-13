@@ -9,6 +9,7 @@ import {
   TreeNode,
 } from './api';
 import { ChartUtil, getChartInfo, LayoutOptions } from './chart-util';
+import { getChildExpanderId } from './expanders';
 import { IdGenerator } from './id-generator';
 
 export const DUMMY_ROOT_NODE_ID = 'DUMMY_ROOT_NODE';
@@ -155,23 +156,35 @@ export class DescendantChart<IndiT extends Indi, FamT extends Fam>
       const fam = this.options.data.getFam(entry.family!.id)!;
       const children = fam.getChildren();
       const collapsed = this.options.collapsedFamily?.has(entry.id);
+      const isHidden = (childId: string) =>
+        !!this.options.collapsedChild?.has(
+          getChildExpanderId(entry.id, childId),
+        );
       if (children.length) {
-        entry.family!.expander = collapsed
-          ? ExpanderState.PLUS
-          : ExpanderState.MINUS;
+        // [+] when all or some of the children are hidden.
+        entry.family!.expander =
+          collapsed || children.some(isHidden)
+            ? ExpanderState.PLUS
+            : ExpanderState.MINUS;
       }
       if (!collapsed) {
-        children.forEach((childId) => {
-          const childNodes = this.getNodes(childId);
-          childNodes.forEach((node) => {
-            node.parentId = entry.id;
-            if (node.family) {
-              node.id = `${idGenerator.getId(node.family.id)}`;
-              stack.push(node);
+        children
+          .filter((childId) => !isHidden(childId))
+          .forEach((childId) => {
+            const childNodes = this.getNodes(childId);
+            // An only child is hidden with the family button.
+            if (children.length > 1) {
+              childNodes[0].childExpander = ExpanderState.MINUS;
             }
+            childNodes.forEach((node) => {
+              node.parentId = entry.id;
+              if (node.family) {
+                node.id = `${idGenerator.getId(node.family.id)}`;
+                stack.push(node);
+              }
+            });
+            parents.push(...childNodes);
           });
-          parents.push(...childNodes);
-        });
       }
     }
     return stratify<TreeNode>()(parents);

@@ -18,6 +18,7 @@ export enum ExpanderDirection {
   INDI,
   SPOUSE,
   FAMILY,
+  CHILD,
 }
 
 /** Represents a node in the d3 graph structure. */
@@ -49,6 +50,11 @@ export interface TreeNode {
   // If true, this marriage will be rendered as an additional marriage
   // of an existing child.
   additionalMarriage?: boolean;
+
+  // State of the [-] button that hides this child from its parents' family.
+  // Set only on the first node of a child in a descendant chart, when the
+  // family has more than one child.
+  childExpander?: ExpanderState;
 }
 
 /**
@@ -193,4 +199,7 @@ export interface ChartOptions {
   collapsedIndi?: Set<string>;
   // [Beta] Set of nodes that have the spouse direction collapsed.
   collapsedSpouse?: Set<string>;
+  // [Beta] Set of children hidden from their parents' family, identified by
+  // getChildExpanderId().
+  collapsedChild?: Set<string>;
 }

@@ -16,6 +16,7 @@ import {
   JsonDataProvider,
   JsonGedcomData,
 } from './data';
+import { toggleExpander } from './expanders';
 
 const DEFAULT_SVG_SELECTOR = 'svg';
 
@@ -142,6 +143,7 @@ class SimpleChartHandle implements ChartHandle {
   private readonly collapsedIndi: Set<string> = new Set<string>();
   private readonly collapsedSpouse: Set<string> = new Set<string>();
   private readonly collapsedFamily: Set<string> = new Set<string>();
+  private readonly collapsedChild: Set<string> = new Set<string>();
   private chartOptions: ChartOptions;
 
   constructor(readonly options: SimpleChartOptions) {}
@@ -153,6 +155,7 @@ class SimpleChartHandle implements ChartHandle {
     this.chartOptions.collapsedFamily = this.collapsedFamily;
     this.chartOptions.collapsedIndi = this.collapsedIndi;
     this.chartOptions.collapsedSpouse = this.collapsedSpouse;
+    this.chartOptions.collapsedChild = this.collapsedChild;
     this.chartOptions.expanderCallback = (id, direction) =>
       this.expanderCallback(id, direction, renderOptions);
 
@@ -173,17 +176,16 @@ class SimpleChartHandle implements ChartHandle {
     direction: ExpanderDirection,
     renderOptions: RenderOptions,
   ) {
-    const set =
-      direction === ExpanderDirection.FAMILY
-        ? this.collapsedFamily
-        : direction === ExpanderDirection.INDI
-          ? this.collapsedIndi
-          : this.collapsedSpouse;
-    if (set.has(id)) {
-      set.delete(id);
-    } else {
-      set.add(id);
-    }
+    toggleExpander(
+      {
+        collapsedIndi: this.collapsedIndi,
+        collapsedSpouse: this.collapsedSpouse,
+        collapsedFamily: this.collapsedFamily,
+        collapsedChild: this.collapsedChild,
+      },
+      id,
+      direction,
+    );
     this.render(renderOptions);
   }
 
